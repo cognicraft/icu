@@ -24,10 +24,13 @@ type HierachicalTranslator struct {
 }
 
 func (t *HierachicalTranslator) IsRoot() bool {
-	return t.Base == nil
+	return t == nil || t.Base == nil
 }
 
 func (t *HierachicalTranslator) Translate(key string, ps ...Parameter) string {
+	if t == nil {
+		return key
+	}
 	if mf, ok := t.Translations[key]; ok {
 		if v, err := mf.Translate(t.Tag, ps...); err == nil {
 			return v
@@ -36,5 +39,11 @@ func (t *HierachicalTranslator) Translate(key string, ps ...Parameter) string {
 	if !t.IsRoot() {
 		return t.Base.Translate(key, ps...)
 	}
+	return key
+}
+
+var nilTranslator Translator = TranslatorFunc(nilTranslatorFunc)
+
+func nilTranslatorFunc(key string, ps ...Parameter) string {
 	return key
 }
