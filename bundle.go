@@ -2,6 +2,7 @@ package icu
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"sync"
@@ -10,28 +11,36 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
-type Bundle interface {
-	TranslatorFor(tag Tag) Translator
-}
-
-var (
-	_ Bundle = (*DirectoryBundle)(nil)
-)
-
-func NewDirectoryBundle(directory string) *DirectoryBundle {
-	return &DirectoryBundle{
+func NewBundle(directory string, defaultTag Tag) *Bundle {
+	return &Bundle{
 		directory: directory,
 		cache:     map[Tag]cacheEntry{},
 	}
 }
 
-type DirectoryBundle struct {
-	directory string
-	mu        sync.RWMutex
-	cache     map[Tag]cacheEntry
+type Bundle struct {
+	directory  string
+	defaultTag Tag
+	mu         sync.RWMutex
+	cache      map[Tag]cacheEntry
 }
 
-func (b *DirectoryBundle) TranslatorFor(tag Tag) Translator {
+func (b *Bundle) TranslatorForRequest(r *http.Request) Translator {
+	if b == nil {
+		return nilTranslator
+	}
+	spec := ExtractSpecification(r)
+	for _, r := range spec.Ranges() {
+		t, err := b.load(r.Tag)
+		if err != nil {
+			continue
+		}
+		return t
+	}
+	return b.TranslatorForTag(b.defaultTag)
+}
+
+func (b *Bundle) TranslatorForTag(tag Tag) Translator {
 	if b == nil {
 		return nilTranslator
 	}
@@ -42,7 +51,7 @@ func (b *DirectoryBundle) TranslatorFor(tag Tag) Translator {
 	return t
 }
 
-func (b *DirectoryBundle) load(tag Tag) (*HierachicalTranslator, error) {
+func (b *Bundle) load(tag Tag) (*HierachicalTranslator, error) {
 	f := filepath.Join(b.directory, fmt.Sprintf("%s.toml", tag))
 	var err error
 
