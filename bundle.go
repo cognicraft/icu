@@ -13,8 +13,9 @@ import (
 
 func NewBundle(directory string, defaultTag Tag) *Bundle {
 	return &Bundle{
-		directory: directory,
-		cache:     map[Tag]cacheEntry{},
+		directory:  directory,
+		defaultTag: defaultTag,
+		cache:      map[Tag]cacheEntry{},
 	}
 }
 
