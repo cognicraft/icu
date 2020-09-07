@@ -111,24 +111,20 @@ func lexMessage(l *lexer) stateFn {
 	switch r {
 	case hash:
 		l.backup()
-		l.emit(tokenText)
+		if l.pos > l.start {
+			l.emit(tokenText)
+		}
 		l.next()
 		l.emit(tokenHash)
 		return lexMessage
 	case quote:
-		n := l.peek()
-		switch n {
-		case leftDelim, rightDelim, quote:
-			l.backup()
-			if l.pos > l.start {
-				l.emit(tokenText)
-			}
-			l.next()
-			l.emit(tokenQuote)
-			return lexQuote
-		default:
-			return lexMessage
+		l.backup()
+		if l.pos > l.start {
+			l.emit(tokenText)
 		}
+		l.next()
+		l.ignore()
+		return lexQuote
 	case leftDelim:
 		l.backup()
 		if l.pos > l.start {
@@ -159,7 +155,12 @@ func lexQuote(l *lexer) stateFn {
 		l.backup()
 		l.emit(tokenQuotedText)
 		l.next()
-		l.emit(tokenQuote)
+		l.ignore()
+		if p := l.next(); p == quote {
+			return lexQuote
+		} else {
+			l.backup()
+		}
 		return lexMessage
 	default:
 		return lexQuote

@@ -38,9 +38,7 @@ func TestTranslate(t *testing.T) {
 		{"quoted", "Use # as a text.", nil, "Use # as a text."},
 		{"quoted", "Value # as a text.", []Parameter{P("value", 1)}, "Value 1 as a text."},
 		{"quoted", "Use # as a text.", []Parameter{P("$value", "foo")}, "Use # as a text."},
-
-		//{"quoted:quote", "This '{isn''t}' obvious", nil, "This {isn't} obvious"},
-
+		{"quoted:quote", "This '{isn''t}' obvious", nil, "This {isn't} obvious"},
 		{"plural:zero", pluralCardinal, []Parameter{P("count", 0)}, "   no \n alarms \t where issued "},
 		{"plural:one", pluralCardinal, []Parameter{P("count", 1)}, "  one alarm was issued  "},
 		{"plural:other", pluralCardinal, []Parameter{P("count", 3)}, " 3 alarms where issued   "},
